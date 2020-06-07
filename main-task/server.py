@@ -2,8 +2,15 @@ import socket
 
 import _thread as thread
 
-HOST = '127.0.0.1'
+import sys
+
+f= open('/dev/null','w')
+sys.stdout=f
+
+HOST = 'localhost'
 PORT = 8888
+
+print("Server Started!!")
 
 ARMY  = []
 NAVY = []
@@ -23,42 +30,39 @@ def category(user):
 
 
 def armybroadcast(user,message,conn):
+    print("Army Broadcast Called : ")
     for member in ARMY:
         if(member!=conn):
-            try:
-                member.sendall("<"+user+"> : "+message)
-            except:
-                member.close()
-                ARMY.remove(member)
+            print(f"Sending message to {member}")
+            member.sendall(message)
+            
 def navybroadcast(user,message,conn):
+    print("Navy Broadcast Called : ")
     for member in NAVY:
         if(member!=conn):
-            try:
-                member.sendall("<"+user+"> : "+message)
-            except:
-                member.close()
-                NAVY.remove(member)
-
+            print(f"Sending message to {member}")
+            member.sendall(message)
+            
 def airforcebroadcast(user,message,conn):
+    print("AirForce Broadcast Called : ")
     for member in AIRFORCE:
         if(member!=conn):
-            try:
-                member.sendall("<"+user+"> : "+message)
-            except:
-                member.close()
-                AIRFORCE.remove(member)
+            print(f"Sending message to {member}")
+            member.sendall(message)
 
 def higherbroadcast(user,message,conn):
+    print("HigherUp BroadCast Called")
     for member in HIGHERUPS:
         if(member!=conn):
-            try:
-                member.sendall("<"+user+"> : "+message)
-            except:
-                member.close()
-                if member in HIGHERUPS:
-                    HIGHERUPS.remove(member)
-    if category(user) == "armygeneral":
-        pass
+            print(f"Sending message to {member}")
+            member.sendall(message)
+
+    if category(user) == "armygeneral" or category(user)=="chiefcommander":
+        armybroadcast(user,message,conn)
+    elif category(user) == "navymarshal" or category(user)=="chiefcommander":
+        navybroadcast(user,message,conn)
+    elif category(user) == "airforcechief" or category(user)=="chiefcommander":
+        airforcebroadcast(user,message,conn)
 
 def client_thread(conn, addr , belongsTo , user):
     conn.sendall(b'SuccessFully  Connected To Server')
@@ -71,21 +75,39 @@ def client_thread(conn, addr , belongsTo , user):
             print(f"Message is : {message}")
 
             if message == b'':
-                if belongsTo == "army" or belongsTo =="armygeneral" or belongsTo == "chiefcommander":
+                if belongsTo == "army":
                     conn.close()
                     ARMY.remove(conn)
-                    break
-                elif belongsTo == "navy" or belongsTo =="navymarshal" or belongsTo == "chiefcommander":
+                elif belongsTo == "navy":
                     conn.close()
                     NAVY.remove(conn)
-                    break
-                elif belongsTo == "airforce" or belongsTo =="airforcechief" or belongsTo == "chiefcommander":
+                elif belongsTo == "airforce":
                     conn.close()
                     AIRFORCE.remove(conn)
-                    break
+                elif belongsTo == "armygeneral":
+                    conn.close()
+                    ARMY.remove(conn)
+                    HIGHERUPS.remove(conn)
+                elif belongsTo == "navymarshal":
+                    conn.close()
+                    NAVY.remove(conn)
+                    HIGHERUPS.remove(conn)
+                elif belongsTo == "airforcechief":
+                    conn.close()
+                    AIRFORCE.remove(conn)
+                    HIGHERUPS.remove(conn)
+                elif belongsTo == "chiefcommander":
+                    conn.close()
+                    ARMY.remove(conn)
+                    NAVY.remove(conn)
+                    AIRFORCE.remove(conn)
+                
+                break
+
                    
                             
             if message != b'':
+                message = b"<" + user.encode('utf-8') + b"> : " + message
                 if belongsTo == "army" :
                     armybroadcast(user,message,conn)
                 elif belongsTo == "navy" :
@@ -114,7 +136,7 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         user = b.decode('utf-8')
         belongsTo = category(user)
 
-        print(f"The connected one belongs To : {user}")
+        print(f"{user} belongs To : {belongsTo}")
         
         if belongsTo == "army" or belongsTo == "armygeneral" or belongsTo=="chiefcommander":
             ARMY.append(conn)
@@ -127,7 +149,7 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         if belongsTo == "airforce" or belongsTo == "airforcechief" or belongsTo=="chiefcommander" :
             AIRFORCE.append(conn)
             print(AIRFORCE)
-        if belongsTo == "chiefcommander" or belongsTo=="armygeneral" or belongsTo == "navymarshal" or belongsTo == "airforcechief":
+        if belongsTo=="armygeneral" or belongsTo == "navymarshal" or belongsTo == "airforcechief":
             HIGHERUPS.append(conn)
 
         print(f"Client {addr} Connected")
