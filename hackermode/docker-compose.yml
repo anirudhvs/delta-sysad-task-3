@@ -1,0 +1,26 @@
+version: '3'
+services: 
+    db:
+        image: mysql
+        restart: always
+        container_name: mysql_db
+        environment:
+            MYSQL_DATABASE: socketchat
+            MYSQL_ROOT_PASSWORD: root1234
+        volumes: 
+            - ./sql/scripts:/docker-entrypoint-initdb.d
+            - ./sql/config:/etc/mysql/conf.d
+            - ./sql/data:/var/lib/mysql
+        ports: 
+            - "8000:3306"
+    
+    chat:
+        build: ./container
+        restart: always
+        container_name: chat_client
+        depends_on:
+            - db
+        tty: true
+
+
+
